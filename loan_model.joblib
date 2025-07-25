@@ -1,0 +1,2 @@
+import joblib
+joblib.dump(model, 'loan_model.joblib')
