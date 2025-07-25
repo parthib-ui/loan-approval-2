@@ -1,160 +1,47 @@
 import streamlit as st
-
-st.title("✅ Loan Approval Predictor")
-st.write("This is a working Streamlit app.")
-
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Loan Approval Predictor</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f7f8;
-            import streamlit as st
-
-# Correct way to add custom CSS
-st.markdown("""
-    <style>
-        body {
-            padding: 20px;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
-        }
-
-        h2 {
-            text-align: center;
-        }
-
-        form {
-            max-width: 500px;
-            margin: auto;
-            background: #fff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-
-        label {
-            display: block;
-            margin: 15px 0 5px;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-        }
-
-        button {
-            background-color: #007BFF;
-            color: white;
-            padding: 12px;
-            border: none;
-            width: 100%;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-
-        .result {
-            text-align: center;
-            font-size: 18px;
-            margin-top: 20px;
-        }
-    </style>
-</head>
-<body>
-    <h2>Loan Approval Prediction</h2>
-    <form action="/predict" method="POST">
-        <label>Gender:</label>
-        <select name="gender">
-            <option value="1">Male</option>
-            <option value="0">Female</option>
-        </select>
-
-        <label>Married:</label>
-        <select name="married">
-            <option value="1">Yes</option>
-            <option value="0">No</option>
-        </select>
-
-        <label>Education:</label>
-        <select name="education">
-            <option value="0">Graduate</option>
-            <option value="1">Not Graduate</option>
-        </select>
-
-        <label>Self Employed:</label>
-        <select name="self_employed">
-            <option value="1">Yes</option>
-            <option value="0">No</option>
-        </select>
-
-        <label>Applicant Income:</label>
-        <input type="number" name="applicant_income" required>
-
-        <label>Coapplicant Income:</label>
-        <input type="number" name="coapplicant_income" required>
-
-        <label>Loan Amount (in thousands):</label>
-        <input type="number" name="loan_amount" required>
-
-        <label>Loan Term (in days):</label>
-        <input type="number" name="loan_term" value="360" required>
-
-        <label>Credit History:</label>
-        <select name="credit_history">
-            <option value="1.0">Good</option>
-            <option value="0.0">Bad</option>
-        </select>
-
-        <label>Property Area:</label>
-        <select name="property_area">
-            <option value="2">Urban</option>
-            <option value="1">Semiurban</option>
-            <option value="0">Rural</option>
-        </select>
-
-        <button type="submit">Predict</button>
-    </form>
-</body>
-</html>
-
-from flask import Flask, render_template, request
 import numpy as np
 import pickle
 
-app = Flask(__name__)
+# Load your trained model (make sure loan_model.pkl is in the same folder)
 model = pickle.load(open("loan_model.pkl", "rb"))
 
-@app.route('/')
-def home():
-    return render_template('index.html')
+# Streamlit App Title and Description
+st.set_page_config(page_title="Loan Approval Predictor")
+st.title("🏦 Loan Approval Prediction")
+st.write("Enter the details below to check if the loan will be approved.")
 
-@app.route('/predict', methods=['POST'])
-def predict():
-    data = [
-        int(request.form['gender']),
-        int(request.form['married']),
-        int(request.form['education']),
-        int(request.form['self_employed']),
-        float(request.form['applicant_income']),
-        float(request.form['coapplicant_income']),
-        float(request.form['loan_amount']),
-        float(request.form['loan_term']),
-        float(request.form['credit_history']),
-        int(request.form['property_area'])
-    ]
-    final_input = np.array([data])
-    prediction = model.predict(final_input)[0]
-    result = "Loan Approved ✅" if prediction == 1 else "Loan Rejected ❌"
-    return f"<h2 class='result' style='text-align:center'>{result}</h2>"
+# Input fields
+gender = st.selectbox("Gender", ["Male", "Female"])
+married = st.selectbox("Married", ["Yes", "No"])
+education = st.selectbox("Education", ["Graduate", "Not Graduate"])
+self_employed = st.selectbox("Self Employed", ["Yes", "No"])
+applicant_income = st.number_input("Applicant Income", min_value=0)
+coapplicant_income = st.number_input("Coapplicant Income", min_value=0)
+loan_amount = st.number_input("Loan Amount (in thousands)", min_value=0)
+loan_term = st.number_input("Loan Term (in days)", value=360)
+credit_history = st.selectbox("Credit History", ["Good (1.0)", "Bad (0.0)"])
+property_area = st.selectbox("Property Area", ["Urban", "Semiurban", "Rural"])
 
-if __name__ == "__main__":
-    app.run(debug=True)
+# Data preprocessing
+def preprocess_input():
+    gender_val = 1 if gender == "Male" else 0
+    married_val = 1 if married == "Yes" else 0
+    education_val = 0 if education == "Graduate" else 1
+    self_employed_val = 1 if self_employed == "Yes" else 0
+    credit_val = 1.0 if credit_history == "Good (1.0)" else 0.0
+    area_val = {"Urban": 2, "Semiurban": 1, "Rural": 0}[property_area]
 
+    features = np.array([[gender_val, married_val, education_val, self_employed_val,
+                          applicant_income, coapplicant_income, loan_amount,
+                          loan_term, credit_val, area_val]])
+    return features
 
+# Predict and Display Result
+if st.button("Predict Loan Approval"):
+    input_data = preprocess_input()
+    prediction = model.predict(input_data)[0]
+
+    if prediction == 1:
+        st.success("✅ Loan Approved!")
+    else:
+        st.error("❌ Loan Rejected.")
