@@ -13,7 +13,17 @@ st.write("This is a working Streamlit app.")
         body {
             font-family: Arial, sans-serif;
             background: #f4f7f8;
+            import streamlit as st
+
+# Correct way to add custom CSS
+st.markdown("""
+    <style>
+        body {
             padding: 20px;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
         }
 
         h2 {
